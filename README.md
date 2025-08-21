@@ -66,6 +66,36 @@ No YAML configuration is supported.
 
 ---
 
+## 🔑 How to Obtain Client ID and Client Secret
+
+CAME does not provide a public developer portal. Instead, we reuse the same OAuth
+client credentials that the web app uses. You can extract them yourself:
+
+1. Open [https://beta.cameconnect.net](https://beta.cameconnect.net) (or [https://app.cameconnect.net](https://app.cameconnect.net)) in a desktop browser and **log in**.
+2. Open your browser’s **Developer Tools → Network** tab.
+3. Perform any action that triggers an API call (e.g. refresh the page or open the "Role" page).
+4. Look for a request to an endpoint like:
+
+https://auth.cameconnect.net/oauth/token
+
+5. Select that request and look at the **Request Headers**.
+6. Find the header:
+
+Authorization: Basic <long-base64-string>
+
+7. Copy the `<long-base64-string>` part and **decode it from Base64** (many online tools or `base64 -d` in a terminal).
+
+- The result will be:
+  ```
+  clientId:clientSecret
+  ```
+
+8. Use those two values when configuring the integration.
+
+⚠️ **Note:** These values are not officially documented and may change if CAME rotates or replaces them. If the integration suddenly fails, repeat the steps above to extract new values.
+
+---
+
 ## 🔁 About the Redirect URI (important)
 
 CAME’s OAuth server checks that the `redirect_uri` **exactly matches** the ones registered for your OAuth client.
@@ -143,15 +173,19 @@ logger:
 
 Then restart HA and check Settings → System → Logs.
 
-🔐 Security & Privacy
+---
 
-Credentials are stored by Home Assistant’s standard config entry storage.
+## 🔐 Security & Privacy
 
-Client Secret is sensitive — treat it like a password.
+- Credentials are stored by Home Assistant’s standard config entry storage.
 
-The integration talks only to official *.cameconnect.net endpoints used by the web app.
+- Client Secret is sensitive — treat it like a password.
 
-🧭 Roadmap
+- The integration talks only to official *.cameconnect.net endpoints used by the web app.
+
+---
+
+## 🧭 Roadmap
 
 Auto-discovery of devices (multi-device accounts)
 
