@@ -2,7 +2,7 @@
   "domain": "came_connect",
   "name": "CAME Connect (Unofficial)",
   "codeowners": ["@your-github-handle"],
-  "version": "0.2.8",
+  "version": "0.2.9",
   "config_flow": true,
   "integration_type": "hub",
   "iot_class": "cloud_polling",

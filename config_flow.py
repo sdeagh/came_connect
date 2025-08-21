@@ -1,43 +1,75 @@
-
 from __future__ import annotations
 
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResult
+from homeassistant.core import callback
 
-from .const import DOMAIN, CONF_CLIENT_ID, CONF_CLIENT_SECRET, CONF_USERNAME, CONF_PASSWORD, CONF_REDIRECT_URI, CONF_DEVICE_ID, CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL
+from .const import (
+    DOMAIN,
+    CONF_CLIENT_ID, CONF_CLIENT_SECRET, CONF_USERNAME, CONF_PASSWORD, CONF_DEVICE_ID,
+    CONF_REDIRECT_URI, CONF_POLL_INTERVAL,
+    DEFAULT_REDIRECT_URI, DEFAULT_POLL_INTERVAL,
+)
 
+# Initial setup schema: ONLY essentials (no redirect, no poll)
 STEP_USER_DATA_SCHEMA = vol.Schema({
     vol.Required(CONF_CLIENT_ID): str,
     vol.Required(CONF_CLIENT_SECRET): str,
     vol.Required(CONF_USERNAME): str,
     vol.Required(CONF_PASSWORD): str,
-    vol.Required(CONF_REDIRECT_URI): str,
     vol.Required(CONF_DEVICE_ID): str,
-    vol.Optional(CONF_POLL_INTERVAL, default=DEFAULT_POLL_INTERVAL): int,
 })
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
-    async def async_step_user(self, user_input=None) -> FlowResult:
-        errors = {}
+    async def async_step_user(self, user_input: dict | None = None) -> FlowResult:
         if user_input is not None:
-            try:
-                int(user_input[CONF_POLL_INTERVAL])
-            except Exception:
-                errors["base"] = "invalid_poll"
-            if not errors:
-                return self.async_create_entry(
-                    title="CAME Connect",
-                    data={
-                        "client_id": user_input["client_id"],
-                        "client_secret": user_input["client_secret"],
-                        "username": user_input["username"],
-                        "password": user_input["password"],
-                        "redirect_uri": user_input["redirect_uri"],
-                        "device_id": user_input["device_id"],
-                    },
-                    options={"poll_interval": user_input["poll_interval"]},
-                )
-        return self.async_show_form(step_id="user", data_schema=STEP_USER_DATA_SCHEMA, errors=errors)
+            return self.async_create_entry(
+                title="CAME Connect",
+                data={
+                    CONF_CLIENT_ID: user_input[CONF_CLIENT_ID],
+                    CONF_CLIENT_SECRET: user_input[CONF_CLIENT_SECRET],
+                    CONF_USERNAME: user_input[CONF_USERNAME],
+                    CONF_PASSWORD: user_input[CONF_PASSWORD],
+                    CONF_DEVICE_ID: user_input[CONF_DEVICE_ID],
+                },
+            )
+        return self.async_show_form(step_id="user", data_schema=STEP_USER_DATA_SCHEMA)
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry):
+        return CameConnectOptionsFlow(config_entry)
+
+
+class CameConnectOptionsFlow(config_entries.OptionsFlow):
+    """Options UI for Redirect URI and Poll Interval."""
+
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        self.config_entry = config_entry
+
+    async def async_step_init(self, user_input: dict | None = None) -> FlowResult:
+        if user_input is not None:
+            return self.async_create_entry(
+                title="",
+                data={
+                    CONF_REDIRECT_URI: user_input[CONF_REDIRECT_URI].strip(),
+                    CONF_POLL_INTERVAL: int(user_input[CONF_POLL_INTERVAL]),
+                },
+            )
+
+        current_redirect = self.config_entry.options.get(CONF_REDIRECT_URI, DEFAULT_REDIRECT_URI)
+        current_poll = self.config_entry.options.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL)
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema({
+                vol.Required(CONF_REDIRECT_URI, default=current_redirect): str,
+                vol.Required(CONF_POLL_INTERVAL, default=current_poll): vol.All(int, vol.Range(min=5, max=300)),
+            }),
+        )
+
+async def async_get_options_flow(config_entry: config_entries.ConfigEntry):
+    return CameConnectOptionsFlow(config_entry)

@@ -118,10 +118,30 @@ does not match any of the OAuth 2.0 Client's pre-registered redirect urls."}
 
 ## ⚙️ Options
 
-- **Poll interval (seconds)** — default **5**
-- **Redirect URI override** — optional (use if your client is bound to `https://app.cameconnect.net/role` or a future URL)
+After you complete the initial setup, you can adjust extra settings from the integration’s **Options menu**:
 
-> You can change options in **Settings → Devices & Services → CAME Connect → Configure**.
+1. Go to **Settings → Devices & Services** in Home Assistant.
+2. Find **CAME Connect (Unofficial)** in your list of integrations.
+3. Click the **cog icon (⚙️)** on the integration card.
+
+![Integration card with cog icon](docs/images/integration-cog.png)
+
+You will see two configurable options:
+
+- **Redirect URI**  
+  The URI used when authenticating with the CAME Connect cloud.  
+  Default: `https://beta.cameconnect.net/role`
+
+In most cases you don’t need to change this unless CAME updates their API endpoints.
+
+- **Poll Interval (seconds)**  
+   How often Home Assistant queries the CAME Connect cloud for device updates.  
+   Default: `5` seconds.  
+   Minimum: `5` seconds (to avoid excessive load on CAME’s servers).  
+   You can increase this if you want to reduce network traffic or API calls.
+  ![Options form](docs/images/options-form.png)
+
+> 💡 Changes made here take effect immediately. You do **not** need to re-enter your credentials.
 
 ---
 

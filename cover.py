@@ -40,7 +40,6 @@ class CameGateCover(CoordinatorEntity, CoverEntity):
         self._last_pos: int | None = None
         self._phase: int | None = None
         self._direction: str | None = None  # "opening" | "closing" | None
-        self._hint_until: float = 0.0        # optimistic direction window
 
     # ---------- helpers ----------
     def _raw(self) -> list[int]:
@@ -94,9 +93,6 @@ class CameGateCover(CoordinatorEntity, CoverEntity):
             elif new_pos == 100 and self._last_pos < 100:
                 self._direction = "opening"
 
-        # 3) Optimistic window after sending Close (covers API lag)
-        elif monotonic() < self._hint_until:
-            self._direction = "closing"
 
         self._last_pos = new_pos
         self._phase = new_phase
@@ -105,10 +101,12 @@ class CameGateCover(CoordinatorEntity, CoverEntity):
     # ---------- HA properties ----------
     @property
     def current_cover_position(self) -> int | None:
+        """Return the last known position (0–100)."""
         return self._last_pos if self._last_pos is not None else self._pos_from_raw(self._raw())
 
     @property
     def is_closed(self) -> bool | None:
+        """Return True if the gate is fully closed."""
         if self._phase == PHASE_CLOSED:
             return True
         if self._phase in (PHASE_OPEN, PHASE_OPENING, PHASE_CLOSING):
@@ -118,6 +116,7 @@ class CameGateCover(CoordinatorEntity, CoverEntity):
 
     @property
     def is_opening(self) -> bool | None:
+        """Return True if the gate is opening."""
         if self._phase == PHASE_OPENING:
             return True
         if self._phase == PHASE_CLOSING:
@@ -126,6 +125,7 @@ class CameGateCover(CoordinatorEntity, CoverEntity):
 
     @property
     def is_closing(self) -> bool | None:
+        """Return True if the gate is closing."""
         if self._phase == PHASE_CLOSING:
             return True
         if self._phase == PHASE_OPENING:
@@ -134,7 +134,7 @@ class CameGateCover(CoordinatorEntity, CoverEntity):
 
     @property
     def extra_state_attributes(self) -> dict:
-        # Visible in Dev Tools → States
+        """Expose extra info in HA Dev Tools → States."""
         return {
             "phase": self._phase,
             "direction": self._direction,
@@ -144,25 +144,33 @@ class CameGateCover(CoordinatorEntity, CoverEntity):
 
     # ---------- actions ----------
     async def async_open_cover(self, **kwargs):
-        self._direction = "opening"  # optimistic hint
         await self._client.send_command(self._device_id, 2)
         await self.coordinator.async_request_refresh()
 
+        # Start burst polling
+        start_fast = self.hass.data[DOMAIN][self.coordinator.config_entry.entry_id]["start_fast_poll"]
+        await start_fast()
+
     async def async_close_cover(self, **kwargs):
-        self._direction = "closing"           # optimistic hint
-        self._hint_until = monotonic() + 25.0 # show “closing” for ~25s if API lags
         await self._client.send_command(self._device_id, 5)
         await self.coordinator.async_request_refresh()
+
+        # Start burst polling
+        start_fast = self.hass.data[DOMAIN][self.coordinator.config_entry.entry_id]["start_fast_poll"]
+        await start_fast()
 
     async def async_stop_cover(self, **kwargs):
         # STOP = 129
         await self._client.send_command(self._device_id, 129)
         await self.coordinator.async_request_refresh()
 
+        # Start burst polling
+        start_fast = self.hass.data[DOMAIN][self.coordinator.config_entry.entry_id]["start_fast_poll"]
+        await start_fast()
+
     async def async_set_cover_position(self, **kwargs):
         # Not implemented; unknown cloud command
         return
-
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities):
     data = hass.data[DOMAIN][entry.entry_id]
