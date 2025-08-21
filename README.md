@@ -1,9 +1,7 @@
 # CAME Connect (Unofficial) · Home Assistant Custom Integration
 
 > Control CAME gates via CAME Connect cloud from Home Assistant.
-
 > **Unofficial** community integration — not affiliated with CAME.
-
 > Tested with a **CAME ZLX24SA board**. Other board types may or may not work.
 
 ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Component-41BDF5?logo=homeassistant&logoColor=white)
@@ -27,7 +25,7 @@
 ## ✅ Requirements
 
 - Home Assistant 2023.9+ (tested on recent HA releases)
-- Your Client Id and Client Secret
+- Your Client Id and Client Secret (see below on how to get these)
 - A valid **CAME Connect** account (username/password)
 - Your **Device ID** (from your CAME Connect device). This can be found at the end of the URL (e.g. https://cameconnect.net/home/devices/XXXXXX). Probably will be 6 digits.
 - A CAME controller that works with the CAME Connect cloud  
@@ -76,9 +74,9 @@ No YAML configuration is supported.
 CAME does not provide a public developer portal. Instead, we reuse the same OAuth
 client credentials that the web app uses. You can extract them yourself:
 
-1. Open [https://beta.cameconnect.net](https://beta.cameconnect.net) (or [https://app.cameconnect.net](https://app.cameconnect.net)) in a desktop browser and **log in**.
+1. Open [https://beta.cameconnect.net](https://beta.cameconnect.net) (or [https://app.cameconnect.net](https://app.cameconnect.net)) in a desktop browser but don't **log in** yet.
 2. Open your browser’s **Developer Tools → Network** tab.
-3. Perform any action that triggers an API call (e.g. refresh the page or open the "Role" page).
+3. **log in** to the web application
 4. Look for a request to an endpoint like:
 
 https://auth.cameconnect.net/oauth/token
@@ -88,7 +86,7 @@ https://auth.cameconnect.net/oauth/token
 
 Authorization: Basic <long-base64-string>
 
-7. Copy the `<long-base64-string>` part and **decode it from Base64** (many online tools or `base64 -d` in a terminal).
+7. Copy the `<long-base64-string>` part and **decode it from Base64** (many online tools e.g. [https://www.base64decode.org](https://www.base64decode.org/) or `base64 -d` in a terminal).
 
 - The result will be:
   ```
