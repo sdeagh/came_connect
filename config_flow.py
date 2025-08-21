@@ -4,6 +4,7 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.core import callback
+from homeassistant.config_entries import ConfigEntry
 
 from .const import (
     DOMAIN,
@@ -46,9 +47,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 class CameConnectOptionsFlow(config_entries.OptionsFlow):
     """Options UI for Redirect URI and Poll Interval."""
-
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-        self.config_entry = config_entry
 
     async def async_step_init(self, user_input: dict | None = None) -> FlowResult:
         if user_input is not None:
