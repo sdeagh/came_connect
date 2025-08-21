@@ -24,8 +24,9 @@
 ## ✅ Requirements
 
 - Home Assistant 2023.9+ (tested on recent HA releases)
-- A valid **CAME Connect** account
-- Your **Device ID** (from your CAME Connect device)
+- Your Client Id and Client Secret
+- A valid **CAME Connect** account (username/password)
+- Your **Device ID** (from your CAME Connect device). This can be found at the end of the URL (e.g. https://cameconnect.net/home/devices/XXXXXX). Probably will be 6 digits.
 
 ---
 
@@ -43,3 +44,149 @@
 ### Option B — Manual
 
 1. Copy this folder to your HA config:
+2. **Restart Home Assistant**.
+3. Add the integration from **Settings → Devices & Services**.
+
+---
+
+## 🔧 Configuration (UI)
+
+When adding the integration you’ll be prompted for:
+
+- **Client ID**
+- **Client Secret**
+- **Username (email)**
+- **Password**
+- **Device ID**
+
+The integration internally uses a **Redirect URI** (see the next section).  
+Default **poll interval** is **5 seconds** and can be changed later in **Options**.
+
+No YAML configuration is supported.
+
+---
+
+## 🔁 About the Redirect URI (important)
+
+CAME’s OAuth server checks that the `redirect_uri` **exactly matches** the ones registered for your OAuth client.
+
+- If your client is registered against the **beta** site, you must use: https://beta.cameconnect.net/role
+- If your client is registered against the **production** site, you must use: https://app.cameconnect.net/role
+
+This integration defaults to the **beta** redirect (because that’s what our test client requires).  
+If your client uses production, open **Options → Advanced** and set a **Redirect URI override**.
+
+**Typical error if it doesn’t match:**
+auth-code failed: 400 {"error":"invalid_request","error_description":
+"The request is missing a required parameter ... The 'redirect_uri' parameter
+does not match any of the OAuth 2.0 Client's pre-registered redirect urls."}
+
+---
+
+## ⚙️ Options
+
+- **Poll interval (seconds)** — default **5**
+- **Redirect URI override** — optional (use if your client is bound to `https://app.cameconnect.net/role` or a future URL)
+
+> You can change options in **Settings → Devices & Services → CAME Connect → Configure**.
+
+---
+
+## 🧩 Entities
+
+### Cover
+
+- `cover.came_gate` — supports **open**, **close**, **stop**
+
+### Sensors (may vary)
+
+- `sensor.came_connect_status` — connection / last update
+- Additional sensors can be added as the API is expanded.
+
+---
+
+## 🛠️ Services
+
+- Standard **cover** services:
+  - `cover.open_cover`
+  - `cover.close_cover`
+  - `cover.stop_cover`
+
+---
+
+## 🔍 Troubleshooting
+
+### Redirect URI mismatch (400 invalid_request)
+
+Your OAuth client is registered to a different URL.  
+**Fix:** In Options set **Redirect URI override** to the correct value (typically `https://app.cameconnect.net/role` or `https://beta.cameconnect.net/role`).
+
+### Auth fails / invalid credentials
+
+- Double-check **Client ID/Secret**, **Username**, **Password**.
+- Make sure your CAME account has access to the **Device ID** you entered.
+
+### No entities created
+
+- Open **Settings → System → Logs** and enable debug (below).
+- Verify your Device ID is correct and reachable via CAME Connect.
+
+### Enable debug logging
+
+Add to `configuration.yaml`:
+
+```yaml
+logger:
+  default: warning
+  logs:
+    custom_components.came_connect: debug
+
+Then restart HA and check Settings → System → Logs.
+
+🔐 Security & Privacy
+
+Credentials are stored by Home Assistant’s standard config entry storage.
+
+Client Secret is sensitive — treat it like a password.
+
+The integration talks only to official *.cameconnect.net endpoints used by the web app.
+
+🧭 Roadmap
+
+Auto-discovery of devices (multi-device accounts)
+
+More sensors (gate state, obstruction, errors if exposed)
+
+Local control if/when APIs allow
+
+Config flow to auto-probe the correct redirect URI
+
+Have a feature request? Please open a GitHub issue.
+
+🤝 Contributing
+
+PRs are welcome!
+
+Code style: match HA core (black, isort, flake8 where applicable)
+
+Folder layout:
+custom_components/came_connect/
+  __init__.py
+  api.py
+  binary_sensor.py
+  config_flow.py
+  const.py
+  cover.py
+  manifest.json
+  sensor.py
+  translations/
+
+Keep network calls in api.py, HA glue in platform files.
+
+Avoid breaking changes; if necessary, bump version and document in Changelog.
+
+🙏 Acknowledgements
+
+Thanks to the HA community and everyone testing against different CAME setups.
+This project is not affiliated with or endorsed by CAME.
+```
