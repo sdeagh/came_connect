@@ -172,6 +172,7 @@ logger:
     custom_components.came_connect: debug
 
 Then restart HA and check Settings → System → Logs.
+```
 
 ---
 
@@ -181,7 +182,7 @@ Then restart HA and check Settings → System → Logs.
 
 - Client Secret is sensitive — treat it like a password.
 
-- The integration talks only to official *.cameconnect.net endpoints used by the web app.
+- The integration talks only to official \*.cameconnect.net endpoints used by the web app.
 
 ---
 
@@ -197,7 +198,7 @@ Config flow to auto-probe the correct redirect URI
 
 Have a feature request? Please open a GitHub issue.
 
-🤝 Contributing
+## 🤝 Contributing
 
 PRs are welcome!
 
@@ -205,22 +206,21 @@ Code style: match HA core (black, isort, flake8 where applicable)
 
 Folder layout:
 custom_components/came_connect/
-  __init__.py
-  api.py
-  binary_sensor.py
-  config_flow.py
-  const.py
-  cover.py
-  manifest.json
-  sensor.py
-  translations/
+**init**.py
+api.py
+binary_sensor.py
+config_flow.py
+const.py
+cover.py
+manifest.json
+sensor.py
+translations/
 
 Keep network calls in api.py, HA glue in platform files.
 
 Avoid breaking changes; if necessary, bump version and document in Changelog.
 
-🙏 Acknowledgements
+## 🙏 Acknowledgements
 
 Thanks to the HA community and everyone testing against different CAME setups.
 This project is not affiliated with or endorsed by CAME.
-```
