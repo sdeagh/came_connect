@@ -74,9 +74,9 @@ No YAML configuration is supported.
 CAME does not provide a public developer portal. Instead, we reuse the same OAuth
 client credentials that the web app uses. You can extract them yourself:
 
-1. Open [https://beta.cameconnect.net](https://beta.cameconnect.net) (or [https://app.cameconnect.net](https://app.cameconnect.net)) in a desktop browser but don't **log in** yet.
+1. Open [https://beta.cameconnect.net](https://beta.cameconnect.net) (or [https://app.cameconnect.net](https://app.cameconnect.net)) in a desktop browser but **don't** log in yet.
 2. Open your browser’s **Developer Tools → Network** tab.
-3. **log in** to the web application
+3. **Log in** to the web application
 4. Look for a request to an endpoint like:
 
 https://auth.cameconnect.net/oauth/token
