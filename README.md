@@ -27,7 +27,7 @@
 - Home Assistant 2023.9+ (tested on recent HA releases)
 - Your Client Id and Client Secret (see below on how to get these)
 - A valid **CAME Connect** account (username/password)
-- Your **Device ID** (from your CAME Connect device). This can be found at the end of the URL (e.g. `https://cameconnect.net/home/devices/XXXXXX`). Probably will be 6 digits.
+- Your **Device ID** (from your CAME Connect device). This can be found at the end of the URL (e.g. `https://cameconnect.net/home/devices/XXXXXX`) once you have selected your site and then your device. Probably will be 6 digits.
 - A CAME controller that works with the CAME Connect cloud  
   (⚠️ confirmed on **ZLX24SA board**, other models untested)
 
