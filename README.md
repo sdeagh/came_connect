@@ -1,7 +1,9 @@
 # CAME Connect (Unofficial) · Home Assistant Custom Integration
 
-> Control CAME gates via CAME Connect cloud from Home Assistant.  
+> Control CAME gates via CAME Connect cloud from Home Assistant.
+
 > **Unofficial** community integration — not affiliated with CAME.
+
 > Tested with a **CAME ZLX24SA board**. Other board types may or may not work.
 
 ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Component-41BDF5?logo=homeassistant&logoColor=white)
