@@ -2,6 +2,7 @@
 
 > Control CAME gates via CAME Connect cloud from Home Assistant.  
 > **Unofficial** community integration — not affiliated with CAME.
+> Tested with a **CAME ZLX24SA board**. Other board types may or may not work.
 
 ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Component-41BDF5?logo=homeassistant&logoColor=white)
 ![HACS](https://img.shields.io/badge/HACS-Custom%20Repository-orange)
@@ -27,6 +28,8 @@
 - Your Client Id and Client Secret
 - A valid **CAME Connect** account (username/password)
 - Your **Device ID** (from your CAME Connect device). This can be found at the end of the URL (e.g. https://cameconnect.net/home/devices/XXXXXX). Probably will be 6 digits.
+- A CAME controller that works with the CAME Connect cloud  
+  (⚠️ confirmed on **ZLX24SA board**, other models untested)
 
 ---
 
@@ -198,6 +201,8 @@ Config flow to auto-probe the correct redirect URI
 
 Have a feature request? Please open a GitHub issue.
 
+---
+
 ## 🤝 Contributing
 
 PRs are welcome!
@@ -219,6 +224,8 @@ translations/
 Keep network calls in api.py, HA glue in platform files.
 
 Avoid breaking changes; if necessary, bump version and document in Changelog.
+
+---
 
 ## 🙏 Acknowledgements
 
