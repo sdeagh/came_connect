@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from time import monotonic
-
+import logging
 from homeassistant.components.cover import (
     CoverDeviceClass,
     CoverEntity,
@@ -20,7 +20,9 @@ PHASE_OPEN = 16
 PHASE_CLOSED = 17
 PHASE_OPENING = 32
 PHASE_CLOSING = 33
+PHASE_PAUSED = 19
 
+_LOGGER = logging.getLogger(__name__)
 
 class CameGateCover(CoordinatorEntity, CoverEntity):
     _attr_name = "Gate"
@@ -77,25 +79,37 @@ class CameGateCover(CoordinatorEntity, CoverEntity):
         new_pos = self._pos_from_raw(raw)
         new_phase = self._phase_from_raw(raw)
 
-        # Recompute direction every refresh
+        # Reset each cycle
         self._direction = None
 
-        # 1) Prefer explicit phase codes from CAME
+        # 1) Trust CAME phases first
         if new_phase in (PHASE_OPENING, PHASE_CLOSING):
             self._direction = "opening" if new_phase == PHASE_OPENING else "closing"
 
-        # 2) Fallback to % delta (with boundary fix)
-        elif self._last_pos is not None and new_pos is not None:
+        elif new_phase in (PHASE_OPEN, PHASE_CLOSED, PHASE_PAUSED):
+            # Idle/steady: explicitly no direction
+            self._direction = None
+
+        # 2) Only fall back to % delta when phase didn’t tell us motion
+        #    AND the position actually changed.
+        elif self._last_pos is not None and new_pos is not None and new_pos != self._last_pos:
             if 0 < new_pos < 100:
                 self._direction = "opening" if new_pos > self._last_pos else "closing"
             elif new_pos == 0 and self._last_pos > 0:
-                self._direction = "closing"   # jumped straight to 0 between polls
+                self._direction = "closing"
             elif new_pos == 100 and self._last_pos < 100:
                 self._direction = "opening"
 
-
+        # Commit latest values
         self._last_pos = new_pos
         self._phase = new_phase
+
+        # Helpful debug line
+        _LOGGER.debug(
+            "Entity update %s: pos=%s phase=%s direction=%s",
+            self._device_id, self._last_pos, self._phase, self._direction
+        )
+
         super()._handle_coordinator_update()
 
     # ---------- HA properties ----------
@@ -134,9 +148,17 @@ class CameGateCover(CoordinatorEntity, CoverEntity):
 
     @property
     def extra_state_attributes(self) -> dict:
-        """Expose extra info in HA Dev Tools → States."""
+        def _phase_name(p: int | None) -> str:
+            if p == PHASE_OPEN: return "open"
+            if p == PHASE_CLOSED: return "closed"
+            if p == PHASE_OPENING: return "opening"
+            if p == PHASE_CLOSING: return "closing"
+            if p == PHASE_PAUSED: return "paused"
+            return str(p) if p is not None else "unknown"
+
         return {
             "phase": self._phase,
+            "phase_name": _phase_name(self._phase),
             "direction": self._direction,
             "last_pos": self._last_pos,
             "raw_data": self._raw(),  # [phase, position]
@@ -144,29 +166,21 @@ class CameGateCover(CoordinatorEntity, CoverEntity):
 
     # ---------- actions ----------
     async def async_open_cover(self, **kwargs):
+        _LOGGER.debug("Sending OPEN command to device %s", self._device_id)
         await self._client.send_command(self._device_id, 2)
         await self.coordinator.async_request_refresh()
-
-        # Start burst polling
-        start_fast = self.hass.data[DOMAIN][self.coordinator.config_entry.entry_id]["start_fast_poll"]
-        await start_fast()
+        
 
     async def async_close_cover(self, **kwargs):
+        _LOGGER.debug("Sending CLOSE command to device %s", self._device_id)
         await self._client.send_command(self._device_id, 5)
         await self.coordinator.async_request_refresh()
-
-        # Start burst polling
-        start_fast = self.hass.data[DOMAIN][self.coordinator.config_entry.entry_id]["start_fast_poll"]
-        await start_fast()
-
+        
     async def async_stop_cover(self, **kwargs):
+        _LOGGER.debug("Sending STOP command to device %s", self._device_id)
         # STOP = 129
         await self._client.send_command(self._device_id, 129)
         await self.coordinator.async_request_refresh()
-
-        # Start burst polling
-        start_fast = self.hass.data[DOMAIN][self.coordinator.config_entry.entry_id]["start_fast_poll"]
-        await start_fast()
 
     async def async_set_cover_position(self, **kwargs):
         # Not implemented; unknown cloud command
