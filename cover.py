@@ -104,12 +104,6 @@ class CameGateCover(CoordinatorEntity, CoverEntity):
         self._last_pos = new_pos
         self._phase = new_phase
 
-        # Helpful debug line
-        _LOGGER.debug(
-            "Entity update %s: pos=%s phase=%s direction=%s",
-            self._device_id, self._last_pos, self._phase, self._direction
-        )
-
         super()._handle_coordinator_update()
 
     # ---------- HA properties ----------
@@ -166,18 +160,15 @@ class CameGateCover(CoordinatorEntity, CoverEntity):
 
     # ---------- actions ----------
     async def async_open_cover(self, **kwargs):
-        _LOGGER.debug("Sending OPEN command to device %s", self._device_id)
         await self._client.send_command(self._device_id, 2)
         await self.coordinator.async_request_refresh()
         
 
     async def async_close_cover(self, **kwargs):
-        _LOGGER.debug("Sending CLOSE command to device %s", self._device_id)
         await self._client.send_command(self._device_id, 5)
         await self.coordinator.async_request_refresh()
         
     async def async_stop_cover(self, **kwargs):
-        _LOGGER.debug("Sending STOP command to device %s", self._device_id)
         # STOP = 129
         await self._client.send_command(self._device_id, 129)
         await self.coordinator.async_request_refresh()

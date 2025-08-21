@@ -33,7 +33,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         opts[CONF_POLL_INTERVAL] = DEFAULT_POLL_INTERVAL
         changed = True
     if changed:
-        _LOGGER.debug("Seeding default options: %s", opts)
         hass.config_entries.async_update_entry(entry, options=opts)
 
     # --- Use redirect from options, but stay backward compatible with existing data entries ---
@@ -50,11 +49,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     device_id = entry.data[CONF_DEVICE_ID]
 
-    _LOGGER.debug(
-        "Setting up entry %s (device_id=%s) with poll=%ss, redirect_uri=%s",
-        entry.entry_id, device_id, poll, redirect_uri
-    )
-
     session = async_get_clientsession(hass)
     client = CameConnectClient(
         session,
@@ -67,12 +61,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     async def _async_update_data():
         try:
-            _LOGGER.debug("Coordinator polling device %s…", device_id)
             data = await client.get_device_status(device_id)
-            _LOGGER.debug("Coordinator received status for %s: %s", device_id, data)
             return data
         except Exception as e:
-            _LOGGER.warning("Update failed for %s: %s", device_id, e)
             raise UpdateFailed(str(e)) from e
 
     coordinator = DataUpdateCoordinator(
