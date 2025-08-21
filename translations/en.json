@@ -1,0 +1,22 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "CAME Connect (Unofficial)",
+        "description": "Enter your CAME Connect credentials and device id.",
+        "data": {
+          "client_id": "Client ID",
+          "client_secret": "Client Secret",
+          "username": "Username (email)",
+          "password": "Password",
+          "redirect_uri": "Redirect URI",
+          "device_id": "Device ID",
+          "poll_interval": "Poll interval (seconds)"
+        }
+      }
+    },
+    "error": {
+      "invalid_poll": "Poll interval must be a number"
+    }
+  }
+}
