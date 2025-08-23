@@ -16,7 +16,7 @@
 - Exposes a **Cover** entity (`cover.gate`) with **open / close / stop**
 - Status sensors (e.g. connection state, last update)
 - Config Flow (UI) — no YAML required
-- Adjustable poll interval (via Options) - TODO
+- Adjustable poll interval (via Options)
 
 > **Note:** API and endpoints are based on reverse-engineered calls used by CAME’s web app. CAME can change them at any time.
 
