@@ -79,7 +79,7 @@ client credentials that the web app uses. You can extract them yourself:
 3. **Log in** to the web application
 4. Look for a request to an endpoint like:
 
-https://auth.cameconnect.net/oauth/token
+`https://auth.cameconnect.net/oauth/token`
 
 5. Select that request and look at the **Request Headers**.
 6. Find the header:
