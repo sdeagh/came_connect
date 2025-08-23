@@ -124,8 +124,6 @@ After you complete the initial setup, you can adjust extra settings from the int
 2. Find **CAME Connect (Unofficial)** in your list of integrations.
 3. Click the **cog icon (⚙️)** on the integration card.
 
-![Integration card with cog icon](docs/images/integration-cog.png)
-
 You will see two configurable options:
 
 - **Redirect URI**  
@@ -139,7 +137,6 @@ In most cases you don’t need to change this unless CAME updates their API endp
    Default: `5` seconds.  
    Minimum: `5` seconds (to avoid excessive load on CAME’s servers).  
    You can increase this if you want to reduce network traffic or API calls.
-  ![Options form](docs/images/options-form.png)
 
 > 💡 Changes made here take effect immediately. You do **not** need to re-enter your credentials.
 
