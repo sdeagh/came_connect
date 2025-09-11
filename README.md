@@ -127,7 +127,7 @@ You will see two configurable options:
 
 - **Redirect URI**
   The URI used when authenticating with the CAME Connect cloud.
-  Default: `https://beta.cameconnect.net/role`
+  Default: `https://app.cameconnect.net/role`
 
 In most cases you don’t need to change this unless CAME updates their API endpoints.
 
