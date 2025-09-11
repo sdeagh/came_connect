@@ -1,7 +1,7 @@
 {
   "domain": "came_connect",
   "name": "CAME Connect (Unofficial)",
-  "version": "0.3.2",
+  "version": "1.0.1",
   "config_flow": true,
   "codeowners": ["@sdeagh"],
   "integration_type": "hub",
