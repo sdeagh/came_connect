@@ -46,7 +46,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 
 class CameConnectOptionsFlow(config_entries.OptionsFlow):
-    """Options UI for Redirect URI and Poll Interval."""
+    def __init__(self, config_entry: ConfigEntry) -> None:
+        self.config_entry = config_entry
 
     async def async_step_init(self, user_input: dict | None = None) -> FlowResult:
         if user_input is not None:
@@ -58,8 +59,20 @@ class CameConnectOptionsFlow(config_entries.OptionsFlow):
                 },
             )
 
-        current_redirect = self.config_entry.options.get(CONF_REDIRECT_URI, DEFAULT_REDIRECT_URI)
-        current_poll = self.config_entry.options.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL)
+        current_redirect = (
+            self.config_entry.options.get(CONF_REDIRECT_URI)
+            or self.config_entry.data.get(CONF_REDIRECT_URI)
+            or DEFAULT_REDIRECT_URI
+        )
+        current_poll = (
+            self.config_entry.options.get(CONF_POLL_INTERVAL)
+            or self.config_entry.data.get(CONF_POLL_INTERVAL)
+            or DEFAULT_POLL_INTERVAL
+        )
+        try:
+            current_poll = int(current_poll)
+        except (TypeError, ValueError):
+            current_poll = DEFAULT_POLL_INTERVAL
 
         return self.async_show_form(
             step_id="init",
@@ -68,4 +81,3 @@ class CameConnectOptionsFlow(config_entries.OptionsFlow):
                 vol.Required(CONF_POLL_INTERVAL, default=current_poll): vol.All(int, vol.Range(min=5, max=300)),
             }),
         )
-
