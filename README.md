@@ -99,20 +99,19 @@ Authorization: Basic <long-base64-string>
 
 ---
 
-## 🔁 About the Redirect URI (important)
+## 🔁 Redirect URI (short version)
 
-CAME’s OAuth server checks that the `redirect_uri` **exactly matches** the ones registered for your OAuth client.
+- **Use exactly one of:**
+  - Prod (default): `https://app.cameconnect.net/role`
+  - Beta (only if your client was registered on beta): `https://beta.cameconnect.net/role`
+- **Since 1 Sep 2025:** prod is the norm; beta usually not required.
+- **Override:** Integration **Options → Redirect URI** (no reinstall).
 
-- If your client is registered against the **beta** site, you must use: https://beta.cameconnect.net/role
-- If your client is registered against the **production** site, you must use: https://app.cameconnect.net/role
+**Typical mismatch error:**
 
-This integration defaults to the **beta** redirect (because that’s what our test client requires).  
-If your client uses production, open **Options → Advanced** and set a **Redirect URI override**.
-
-**Typical error if it doesn’t match:**
-auth-code failed: 400 {"error":"invalid_request","error_description":
-"The request is missing a required parameter ... The 'redirect_uri' parameter
-does not match any of the OAuth 2.0 Client's pre-registered redirect urls."}
+```
+invalid_request: 'redirect_uri' does not match any registered URLs
+```
 
 ---
 
@@ -126,17 +125,17 @@ After you complete the initial setup, you can adjust extra settings from the int
 
 You will see two configurable options:
 
-- **Redirect URI**  
-  The URI used when authenticating with the CAME Connect cloud.  
+- **Redirect URI**
+  The URI used when authenticating with the CAME Connect cloud.
   Default: `https://beta.cameconnect.net/role`
 
 In most cases you don’t need to change this unless CAME updates their API endpoints.
 
-- **Poll Interval (seconds)**  
-   How often Home Assistant queries the CAME Connect cloud for device updates.  
-   Default: `5` seconds.  
-   Minimum: `5` seconds (to avoid excessive load on CAME’s servers).  
-   You can increase this if you want to reduce network traffic or API calls.
+- **Poll Interval (seconds)**
+  How often Home Assistant queries the CAME Connect cloud for device updates.
+  Default: `5` seconds.
+  Minimum: `5` seconds (to avoid excessive load on CAME’s servers).
+  You can increase this if you want to reduce network traffic or API calls.
 
 > 💡 Changes made here take effect immediately. You do **not** need to re-enter your credentials.
 
@@ -168,7 +167,7 @@ In most cases you don’t need to change this unless CAME updates their API endp
 
 ### Redirect URI mismatch (400 invalid_request)
 
-Your OAuth client is registered to a different URL.  
+Your OAuth client is registered to a different URL.
 **Fix:** In Options set **Redirect URI override** to the correct value (typically `https://app.cameconnect.net/role` or `https://beta.cameconnect.net/role`).
 
 ### Auth fails / invalid credentials

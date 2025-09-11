@@ -5,9 +5,24 @@ import hashlib
 import secrets
 import string
 import time
+import asyncio
+import aiohttp
+import logging
+
 from typing import Any, Dict, Optional
 
-import aiohttp
+
+
+
+
+class CameAuthError(Exception):
+    """Authentication/authorization failure (bad creds or rejected token)."""
+
+class CameApiError(Exception):
+    """Non-auth API failure (bad request/server error/etc.)."""
+
+class CameRateLimitError(Exception):
+    """429 rate limit (we'll use this later)."""
 
 API_BASE = "https://app.cameconnect.net/api"
 
@@ -52,9 +67,11 @@ class CameConnectClient:
         self._access_token: Optional[str] = None
         self._code_verifier: Optional[str] = None
         self._expires_at: float = 0.0  # monotonic deadline for the token
+        self._lock = asyncio.Lock()
 
     # ---------- OAuth helpers ----------
     async def _fetch_auth_code(self) -> str:
+        
         code_verifier = _generate_code_verifier(64)
         code_challenge = _generate_code_challenge(code_verifier)
         params = {
@@ -74,9 +91,19 @@ class CameConnectClient:
         }
         headers = _basic_header(self._client_id, self._client_secret)
         async with self._session.post(f"{API_BASE}/oauth/auth-code", params=params, data=data, headers=headers, timeout=20) as resp:
+            
             js = await resp.json(content_type=None)
+            # Treat common auth failures as auth errors (CAME sometimes uses 400)
+            if resp.status == 401:
+                raise CameAuthError("Invalid CAME Connect credentials")
+            if resp.status == 400 and isinstance(js, dict) and js.get("error") in {
+                "invalid_grant", "invalid_client", "unauthorized_client"
+            }:
+                raise CameAuthError(f"Auth code rejected: {js}")
+
             if resp.status != 200 or "code" not in js:
-                raise RuntimeError(f"auth-code failed: {resp.status} {js}")
+                raise CameApiError(f"auth-code failed: {resp.status} {js}")
+
             self._code_verifier = code_verifier
             return js["code"]
 
@@ -88,10 +115,20 @@ class CameConnectClient:
             "code_verifier": self._code_verifier,
         }
         headers = _basic_header(self._client_id, self._client_secret)
+
         async with self._session.post(f"{API_BASE}/oauth/token", data=data, headers=headers, timeout=20) as resp:
+                        
             js = await resp.json(content_type=None)
+            # Treat common auth failures as auth errors (CAME sometimes uses 400)
+            if resp.status == 401:
+                raise CameAuthError("Token exchange rejected (401)")
+            if resp.status == 400 and isinstance(js, dict) and js.get("error") in {
+                "invalid_grant", "invalid_client", "unauthorized_client"
+            }:
+                raise CameAuthError(f"Token exchange rejected: {js}")
             if resp.status != 200 or "access_token" not in js:
-                raise RuntimeError(f"token failed: {resp.status} {js}")
+                raise CameApiError(f"token failed: {resp.status} {js}")
+
             self._access_token = js["access_token"]
             ttl = int(js.get("expires_in", 0)) or 0
             # refresh a minute early; keep at least 30s to avoid thrashing
@@ -102,10 +139,13 @@ class CameConnectClient:
         return bool(self._access_token) and time.monotonic() < self._expires_at
 
     async def ensure_token(self) -> str:
-        if not self._token_valid():
-            code = await self._fetch_auth_code()
-            await self._fetch_token(code)
-        return self._access_token  # type: ignore[return-value]
+        if self._token_valid():
+            return self._access_token  # type: ignore[return-value]
+        async with self._lock:
+            if not self._token_valid():
+                code = await self._fetch_auth_code()
+                await self._fetch_token(code)
+            return self._access_token  # type: ignore[return-value]
 
     # ---------- request helper with 401 retry ----------
     async def _request(self, method: str, url: str, *, json: Any | None = None, params: dict | None = None) -> tuple[int, Any]:

@@ -2,7 +2,7 @@
 DOMAIN = "came_connect"
 PLATFORMS = ["cover", "sensor", "binary_sensor"]
 
-DEFAULT_REDIRECT_URI = "https://beta.cameconnect.net/role"  # tested with ZLX24SA board
+DEFAULT_REDIRECT_URI = "https://app.cameconnect.net/role"  # tested with ZLX24SA board
 DEFAULT_POLL_INTERVAL = 5  # seconds
 
 CONF_CLIENT_ID = "client_id"
