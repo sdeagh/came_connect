@@ -11,8 +11,7 @@ import logging
 
 from typing import Any, Dict, Optional
 
-
-
+from .const import API_BASE
 
 
 class CameAuthError(Exception):
@@ -23,9 +22,6 @@ class CameApiError(Exception):
 
 class CameRateLimitError(Exception):
     """429 rate limit (we'll use this later)."""
-
-API_BASE = "https://app.cameconnect.net/api"
-
 
 def _basic_header(client_id: str, client_secret: str) -> dict[str, str]:
     token = base64.b64encode(f"{client_id}:{client_secret}".encode("utf-8")).decode("utf-8")

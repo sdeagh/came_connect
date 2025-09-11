@@ -1,7 +1,10 @@
 from __future__ import annotations
 
-from time import monotonic
+
 import logging
+import asyncio
+import time
+
 from homeassistant.components.cover import (
     CoverDeviceClass,
     CoverEntity,
@@ -10,17 +13,16 @@ from homeassistant.components.cover import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.helpers.entity import DeviceInfo
 
-from .const import DOMAIN
+from .const import (
+    DOMAIN,
+    DEFAULT_MOVING_POLL_INTERVAL,
+    MOTION_TIMEOUT_SECONDS,
+    PHASE_OPEN, PHASE_CLOSED, PHASE_OPENING, PHASE_CLOSING, PHASE_PAUSED,
+)
+
 from .api import CameConnectClient
-
-# Phase codes seen in your traces:
-# 16=open, 17=closed, 32=opening, 33=closing
-PHASE_OPEN = 16
-PHASE_CLOSED = 17
-PHASE_OPENING = 32
-PHASE_CLOSING = 33
-PHASE_PAUSED = 19
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -31,17 +33,30 @@ class CameGateCover(CoordinatorEntity, CoverEntity):
         CoverEntityFeature.OPEN
         | CoverEntityFeature.CLOSE
         | CoverEntityFeature.STOP
-        | CoverEntityFeature.SET_POSITION
     )
 
-    def __init__(self, coordinator, client: CameConnectClient, device_id: str):
+    def __init__(self, coordinator, client: CameConnectClient, device_id: str,
+                 moving_poll_interval: int, motion_timeout: int):
         super().__init__(coordinator)
         self._client = client
-        self._device_id = device_id
+        self._device_id = str(device_id)
         self._attr_unique_id = f"came_gate_{device_id}"
         self._last_pos: int | None = None
         self._phase: int | None = None
         self._direction: str | None = None  # "opening" | "closing" | None
+
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, self._device_id)},   # MUST match the sensors’ identifiers
+            name="Gate",
+            manufacturer="CAME",
+            model="CAME Connect",
+            configuration_url="https://app.cameconnect.net/",
+        )
+
+        # --- motion watch state ---
+        self._moving_task: asyncio.Task | None = None
+        self._moving_poll_interval = float(moving_poll_interval)
+        self._motion_timeout = float(motion_timeout)
 
     # ---------- helpers ----------
     def _raw(self) -> list[int]:
@@ -66,6 +81,42 @@ class CameGateCover(CoordinatorEntity, CoverEntity):
             except Exception:
                 return None
         return None
+
+    # --- Timing helpers ---
+
+    def _is_moving_phase(self) -> bool:
+        return self._phase in (PHASE_OPENING, PHASE_CLOSING)
+
+    def _ensure_motion_watch(self) -> None:
+        if self._moving_task is None:
+            self._moving_task = asyncio.create_task(self._watch_motion())
+
+    def _cancel_motion_watch(self) -> None:
+        if self._moving_task:
+            self._moving_task.cancel()
+            _LOGGER.info('Stopped motion watch')
+            self._moving_task = None
+
+    async def _watch_motion(self) -> None:
+        """Poll quickly while the gate is moving; stop on steady phase or timeout."""
+        
+        deadline = time.monotonic() + self._motion_timeout
+
+        _LOGGER.info('Started motion watch: deadline=%s', deadline)
+
+        try:
+            while time.monotonic() < deadline:
+                # Ask the coordinator to refresh now
+                await self.coordinator.async_refresh()
+                # Keep polling during dwell (OPEN/PAUSED) and while moving.
+                # Stop only when we reach CLOSED (or when the timeout hits).
+                if self._phase == PHASE_CLOSED:
+                    break
+                await asyncio.sleep(self._moving_poll_interval)
+        finally:
+            self._moving_task = None
+
+    # --- End of timing helpers ---
 
     async def async_added_to_hass(self):
         await super().async_added_to_hass()
@@ -103,6 +154,10 @@ class CameGateCover(CoordinatorEntity, CoverEntity):
         # Commit latest values
         self._last_pos = new_pos
         self._phase = new_phase
+
+        # Start fast polling if we detect movement (external triggers too)
+        if self._is_moving_phase():
+            self._ensure_motion_watch()
 
         super()._handle_coordinator_update()
 
@@ -161,16 +216,19 @@ class CameGateCover(CoordinatorEntity, CoverEntity):
     # ---------- actions ----------
     async def async_open_cover(self, **kwargs):
         await self._client.send_command(self._device_id, 2)
+        self._ensure_motion_watch()
         await self.coordinator.async_request_refresh()
         
 
     async def async_close_cover(self, **kwargs):
         await self._client.send_command(self._device_id, 5)
+        self._ensure_motion_watch()
         await self.coordinator.async_request_refresh()
         
     async def async_stop_cover(self, **kwargs):
         # STOP = 129
         await self._client.send_command(self._device_id, 129)
+        self._cancel_motion_watch()
         await self.coordinator.async_request_refresh()
 
     async def async_set_cover_position(self, **kwargs):
@@ -182,4 +240,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     coordinator = data["coordinator"]
     client: CameConnectClient = data["client"]
     device_id = data["device_id"]
-    async_add_entities([CameGateCover(coordinator, client, device_id)])
+    moving_poll = data.get("moving_poll_interval", DEFAULT_MOVING_POLL_INTERVAL)
+    motion_timeout = data.get("motion_timeout", MOTION_TIMEOUT_SECONDS)
+
+    async_add_entities([CameGateCover(coordinator, client, device_id, moving_poll, motion_timeout)])

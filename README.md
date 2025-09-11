@@ -1,4 +1,6 @@
-# CAME Connect (Unofficial) · Home Assistant Custom Integration
+# CAME Connect · Home Assistant Custom Integration
+
+** PLESE NOTE THIS README IS CURRENTLY SLIGHTLY OUT OF DATE **
 
 > Control CAME gates via CAME Connect cloud from Home Assistant.
 > **Unofficial** community integration — not affiliated with CAME.

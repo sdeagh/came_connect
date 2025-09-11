@@ -12,9 +12,11 @@ from .const import (
     DOMAIN, PLATFORMS,
     CONF_CLIENT_ID, CONF_CLIENT_SECRET, CONF_USERNAME, CONF_PASSWORD,
     CONF_REDIRECT_URI, CONF_DEVICE_ID, CONF_POLL_INTERVAL,
-    DEFAULT_POLL_INTERVAL,
-    DEFAULT_REDIRECT_URI, 
+    DEFAULT_POLL_INTERVAL, DEFAULT_REDIRECT_URI,
+    CONF_MOVING_POLL_INTERVAL, CONF_MOTION_TIMEOUT,         
+    DEFAULT_MOVING_POLL_INTERVAL, MOTION_TIMEOUT_SECONDS,
 )
+
 from .api import CameConnectClient
 
 _LOGGER = logging.getLogger(__name__)
@@ -23,29 +25,60 @@ async def async_setup(hass: HomeAssistant, config):
     return True
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
-
+    # --- ensure defaults / migrate ---
     opts = dict(entry.options) if entry.options else {}
     changed = False
+
     if CONF_REDIRECT_URI not in opts:
         opts[CONF_REDIRECT_URI] = DEFAULT_REDIRECT_URI
         changed = True
-    if CONF_POLL_INTERVAL not in opts:
-        opts[CONF_POLL_INTERVAL] = DEFAULT_POLL_INTERVAL
+
+    opt_poll = opts.get(CONF_POLL_INTERVAL)
+    if opt_poll is None or str(opt_poll) == "5":
+        opts[CONF_POLL_INTERVAL] = DEFAULT_POLL_INTERVAL  # 300
         changed = True
+
+    if CONF_MOVING_POLL_INTERVAL not in opts:
+        opts[CONF_MOVING_POLL_INTERVAL] = DEFAULT_MOVING_POLL_INTERVAL  # 2
+        changed = True
+
+    if CONF_MOTION_TIMEOUT not in opts:
+        opts[CONF_MOTION_TIMEOUT] = MOTION_TIMEOUT_SECONDS  # 120
+        changed = True
+
     if changed:
         hass.config_entries.async_update_entry(entry, options=opts)
 
-    # --- Use redirect from options, but stay backward compatible with existing data entries ---
-    redirect_uri = entry.options.get(
-        CONF_REDIRECT_URI,
-        entry.data.get(CONF_REDIRECT_URI, DEFAULT_REDIRECT_URI),
+    # Use the in-memory opts we just prepared (entry.options may not reflect updates yet)
+    current_opts = opts
+
+    # ---- heartbeat / idle poll interval ----
+    raw = (current_opts.get(CONF_POLL_INTERVAL)
+           or entry.data.get(CONF_POLL_INTERVAL)
+           or DEFAULT_POLL_INTERVAL)
+    try:
+        poll = int(raw)
+    except (TypeError, ValueError):
+        poll = DEFAULT_POLL_INTERVAL  # 300
+
+    # ---- redirect URI for OAuth ----
+    redirect_uri = (
+        current_opts.get(CONF_REDIRECT_URI)
+        or entry.data.get(CONF_REDIRECT_URI)
+        or DEFAULT_REDIRECT_URI
+    ).strip()
+
+    moving_poll = int(
+        (current_opts.get(CONF_MOVING_POLL_INTERVAL) or DEFAULT_MOVING_POLL_INTERVAL)
+    )
+    motion_timeout = int(
+        (current_opts.get(CONF_MOTION_TIMEOUT) or MOTION_TIMEOUT_SECONDS)
     )
 
-    raw = entry.options.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL)
-    try:
-        poll = max(5, int(raw))  # don’t let it go lower than 5s
-    except (TypeError, ValueError):
-        poll = max(5, DEFAULT_POLL_INTERVAL)
+    _LOGGER.debug(
+        "CAME Connect: moving_poll=%ss, motion_timeout=%ss",
+        moving_poll, motion_timeout
+    )
 
     device_id = entry.data[CONF_DEVICE_ID]
 
@@ -61,8 +94,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     async def _async_update_data():
         try:
-            data = await client.get_device_status(device_id)
-            return data
+            return await client.get_device_status(device_id)
         except Exception as e:
             raise UpdateFailed(str(e)) from e
 
@@ -80,8 +112,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         "client": client,
         "coordinator": coordinator,
         "device_id": device_id,
+        "moving_poll_interval": moving_poll,
+        "motion_timeout": motion_timeout,
     }
 
+    # You chose OptionsFlow + update listener (no WithReload)
     entry.async_on_unload(entry.add_update_listener(_async_reload_entry))
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

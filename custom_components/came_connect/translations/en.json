@@ -2,21 +2,30 @@
   "config": {
     "step": {
       "user": {
-        "title": "CAME Connect (Unofficial)",
+        "title": "CAME Connect",
         "description": "Enter your CAME Connect credentials and device id.",
         "data": {
           "client_id": "Client ID",
           "client_secret": "Client Secret",
           "username": "Username (email)",
           "password": "Password",
-          "redirect_uri": "Redirect URI",
-          "device_id": "Device ID",
-          "poll_interval": "Poll interval (seconds)"
+          "device_id": "Device ID"
         }
       }
-    },
-    "error": {
-      "invalid_poll": "Poll interval must be a number"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "CAME Connect options",
+        "description": "Redirect and polling settings.",
+        "data": {
+          "redirect_uri": "Redirect URI",
+          "poll_interval": "Idle heartbeat (seconds)",
+          "moving_poll_interval": "Polling while moving (seconds)",
+          "motion_timeout": "Motion timeout (seconds)"
+        }
+      }
     }
   }
 }
