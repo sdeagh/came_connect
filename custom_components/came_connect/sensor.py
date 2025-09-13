@@ -8,35 +8,42 @@ from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorStateClass,
 )
+from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.const import PERCENTAGE
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN
-from .api import CameConnectClient
+from .const import (
+    DOMAIN,
+    PHASE_OPEN, PHASE_CLOSED, PHASE_OPENING, PHASE_CLOSING, PHASE_STOPPED,
+)
 
-PHASE_OPEN = 16
-PHASE_CLOSED = 17
-PHASE_OPENING = 32
-PHASE_CLOSING = 33
-
-def _phase_label(code: Optional[int]) -> Optional[str]:
-    return {
-        PHASE_OPEN: "open",
-        PHASE_CLOSED: "closed",
-        PHASE_OPENING: "opening",
-        PHASE_CLOSING: "closing",
-    }.get(code)
+# Title-case labels for UI consistency
+_PHASE_LABEL = {
+    PHASE_OPEN: "Open",
+    PHASE_CLOSED: "Closed",
+    PHASE_OPENING: "Opening",
+    PHASE_CLOSING: "Closing",
+    PHASE_STOPPED: "Stopped"
+}
 
 
 class _BaseSensor(CoordinatorEntity, SensorEntity):
     def __init__(self, coordinator, device_id: str, name: str, slug: str):
         super().__init__(coordinator)
-        self._device_id = device_id
+        self._device_id = str(device_id)
         self._attr_name = name
         self._attr_unique_id = f"came_gate_{slug}_{device_id}"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, self._device_id)},
+            name="Gate",
+            manufacturer="CAME",
+            model="CAME Connect",
+            configuration_url="https://app.cameconnect.net/",
+        )
 
     def _raw(self) -> list[int]:
         data = self.coordinator.data or {}
@@ -61,10 +68,6 @@ class _BaseSensor(CoordinatorEntity, SensorEntity):
                 pass
         return None
 
-    @property
-    def device_info(self) -> dict[str, Any]:
-        return {"identifiers": {(DOMAIN, self._device_id)}, "name": "Gate", "manufacturer": "CAME", "model": "CAME Connect"}
-
 
 class CamePhaseSensor(_BaseSensor):
     """Human-friendly phase text."""
@@ -74,12 +77,15 @@ class CamePhaseSensor(_BaseSensor):
 
     @property
     def native_value(self) -> Optional[str]:
-        return _phase_label(self._phase())
+        phase = self._phase()
+        return _PHASE_LABEL.get(phase, None)
 
     @property
     def extra_state_attributes(self) -> dict:
-        raw = self._raw()
-        return {"phase_code": self._phase(), "raw_data": raw}
+        return {
+            "phase_code": self._phase(),
+            "raw_data": self._raw(),
+        }
 
 
 class CamePositionSensor(_BaseSensor):
@@ -123,6 +129,8 @@ class CameLastSeenSensor(_BaseSensor):
 class CameErrorSensor(_BaseSensor):
     """Last non-zero error/response code across state slots."""
 
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
     def __init__(self, coordinator, device_id: str):
         super().__init__(coordinator, device_id, "Gate Error", "error")
 
@@ -130,14 +138,12 @@ class CameErrorSensor(_BaseSensor):
     def native_value(self) -> Optional[int]:
         data = self.coordinator.data or {}
         states = data.get("States") or []
-        last_nonzero = None
+        last_nonzero: Optional[int] = None
         for s in states:
-            ec = s.get("ErrorCode")
-            rc = s.get("ResponseCode")
-            if isinstance(ec, int) and ec != 0:
-                last_nonzero = ec
-            if isinstance(rc, int) and rc not in (None, 0):
-                last_nonzero = rc
+            for key in ("ErrorCode", "ResponseCode"):
+                val = s.get(key)
+                if isinstance(val, int) and val != 0:
+                    last_nonzero = val
         return last_nonzero
 
     @property

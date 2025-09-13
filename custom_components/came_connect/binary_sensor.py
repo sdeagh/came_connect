@@ -10,13 +10,9 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
-
-PHASE_OPEN = 16
-PHASE_CLOSED = 17
-PHASE_OPENING = 32
-PHASE_CLOSING = 33
-
+from .const import (
+    DOMAIN, PHASE_OPEN, PHASE_CLOSED, PHASE_OPENING, PHASE_CLOSING, PHASE_STOPPED,
+)
 
 class _BaseBS(CoordinatorEntity, BinarySensorEntity):
     def __init__(self, coordinator, device_id: str, name: str, slug: str):
@@ -56,7 +52,7 @@ class CameMovingBinarySensor(_BaseBS):
         ph = self._phase()
         if ph in (PHASE_OPENING, PHASE_CLOSING):
             return True
-        if ph in (PHASE_OPEN, PHASE_CLOSED):
+        if ph in (PHASE_OPEN, PHASE_CLOSED, PHASE_STOPPED):
             return False
         # Unknown phase → unknown
         return None

@@ -21,9 +21,7 @@
         "description": "Redirect and polling settings.",
         "data": {
           "redirect_uri": "Redirect URI",
-          "poll_interval": "Idle heartbeat (seconds)",
-          "moving_poll_interval": "Polling while moving (seconds)",
-          "motion_timeout": "Motion timeout (seconds)"
+          "websocket_url": "WebSocket URL"
         }
       }
     }

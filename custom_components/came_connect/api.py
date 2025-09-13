@@ -8,11 +8,16 @@ import time
 import asyncio
 import aiohttp
 import logging
+import json
+import contextlib
 
-from typing import Any, Dict, Optional
+from urllib.parse import quote, urlencode
+
+from typing import Any, Dict, Optional, Callable, Awaitable
 
 from .const import API_BASE
 
+WS_LOGGER = logging.getLogger(__name__ + ".ws")  
 
 class CameAuthError(Exception):
     """Authentication/authorization failure (bad creds or rejected token)."""
@@ -59,7 +64,6 @@ class CameConnectClient:
         self._username = username
         self._password = password
         self._redirect_uri = redirect_uri
-
         self._access_token: Optional[str] = None
         self._code_verifier: Optional[str] = None
         self._expires_at: float = 0.0  # monotonic deadline for the token
@@ -179,3 +183,129 @@ class CameConnectClient:
         if status not in (200, 202):
             raise RuntimeError(f"command {command_id} failed: {status} {js}")
         return js
+
+
+
+class CameWebsocketClient:
+    """
+    Minimal WS client:
+      - Connects with Authorization: Bearer <token>
+      - Parses TEXT frames and calls `on_event(code, value)`
+      - Reconnects only when the server closes/errors
+      - No ping/pong or stale watchdog (by design for now)
+    """
+
+    def __init__(
+        self,
+        session: aiohttp.ClientSession,
+        ws_url: str,
+        token_getter: Callable[[], Awaitable[str]],
+        on_event: Callable[[int, Optional[int]], Awaitable[None]],
+    ):
+        self._session = session
+        self._ws_url = ws_url
+        self._token_getter = token_getter
+        self._on_event = on_event
+        self._task: asyncio.Task | None = None
+        self._stop = asyncio.Event()
+
+    async def start(self) -> None:
+        if self._task:
+            return
+        self._stop.clear()
+        self._task = asyncio.create_task(self._run(), name="came_ws_run")
+
+    async def stop(self) -> None:
+        self._stop.set()
+        if self._task:
+            self._task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._task
+            self._task = None
+
+    async def _run(self) -> None:
+        backoff = 1
+        while not self._stop.is_set():
+            try:
+                token = await self._token_getter()  # this should be the raw JWT (no "Bearer " prefix)
+
+                # Build WS URL like the browser (note the language param)
+                url = self._ws_url
+                q = {"language": "en-US"}
+                sep = "&" if "?" in url else "?"
+                url = f"{url}{sep}{urlencode(q)}"
+
+                # Web apps send the JWT as a subprotocol
+                # aiohttp exposes this via the `protocols` argument
+                protocols = [token]
+
+                # Many servers also check Origin
+                headers = {"Origin": "https://www.cameconnect.net"}
+
+                async with self._session.ws_connect(
+                    url,
+                    protocols=protocols,
+                    headers=headers,
+                    timeout=20,
+                ) as ws:
+                    WS_LOGGER.info("WS connected")
+                    backoff = 1
+
+                    async for msg in ws:
+                        if msg.type == aiohttp.WSMsgType.TEXT:
+                            WS_LOGGER.debug("WS TEXT: %s", msg.data)
+                            try:
+                                code, value = self._parse_frame(msg.data)
+                                if code is not None:
+                                    await self._on_event(code, value)
+                            except Exception:
+                                WS_LOGGER.warning("WS frame parse failed", exc_info=True)
+                        elif msg.type in (
+                            aiohttp.WSMsgType.CLOSE,
+                            aiohttp.WSMsgType.CLOSED,
+                            aiohttp.WSMsgType.ERROR,
+                        ):
+                            WS_LOGGER.warning("WS closed: %s", msg.type)
+                            break
+
+            except aiohttp.ClientResponseError as e:
+                WS_LOGGER.warning("WS HTTP error %s: %s", e.status, e)
+            except asyncio.CancelledError:
+                WS_LOGGER.debug("WS task cancelled")
+                break
+            except Exception:
+                WS_LOGGER.exception("WS connect/run error")
+
+            # simple backoff before reconnect
+            try:
+                await asyncio.wait_for(self._stop.wait(), timeout=backoff)
+            except asyncio.TimeoutError:
+                pass
+            backoff = min(backoff * 2, 30)
+
+    # --- frame parsing ---
+
+    def _parse_frame(self, text: str) -> tuple[int | None, int | None]:
+        """
+        For EventId=21 (VarcoStatusUpdate), return (phase, percent).
+        Everything else → (None, None).
+        """
+        try:
+            outer = json.loads(text)
+            data = outer.get("Data") or {}
+            event_id = data.get("EventId")
+
+            inner_raw = data.get("Data")  # JSON-as-string
+            inner = json.loads(inner_raw) if isinstance(inner_raw, str) else (inner_raw or {})
+            payload = inner.get("Payload")
+
+            if event_id == 21 and isinstance(payload, list) and len(payload) >= 2:
+                phase = int(payload[0])
+                percent = int(payload[1])
+                return phase, percent
+
+            # ignore 5/6/23 etc. here; REST fallback will handle if needed
+            return None, None
+        except Exception:
+            WS_LOGGER.exception("WS frame parse failed")
+            return None, None
