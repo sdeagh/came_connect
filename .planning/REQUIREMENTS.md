@@ -9,8 +9,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Reverse Engineering
 
-- [ ] **RE-01**: Identify the exact SIP MESSAGE format that triggers door open on callmanager (port 5062)
-- [ ] **RE-02**: Confirm whether callmanager accepts connections from LAN (not just 127.0.0.1)
+- [x] **RE-01**: Identify the exact SIP MESSAGE format that triggers door open on callmanager (port 5062)
+- [x] **RE-02**: Confirm whether callmanager accepts connections from LAN (not just 127.0.0.1)
 - [ ] **RE-03**: Document the working SIP command with all headers and body
 - [ ] **RE-04**: Standalone Python test script (tools/sip_door_test.py) that opens the door via local SIP, confirming the protocol works independently of HA
 
@@ -61,8 +61,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| RE-01 | Phase 1 | Pending |
-| RE-02 | Phase 1 | Pending |
+| RE-01 | Phase 1 | Complete |
+| RE-02 | Phase 1 | Complete |
 | RE-03 | Phase 1 | Pending |
 | RE-04 | Phase 1 | Pending |
 | DOOR-01 | Phase 2 | Pending |

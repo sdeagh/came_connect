@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Phase 1 context gathered
-last_updated: "2026-03-15T10:55:00.318Z"
+stopped_at: Completed 01-01-PLAN.md
+last_updated: "2026-03-15T11:11:15.261Z"
 last_activity: 2026-03-15 — Roadmap created
 progress:
   total_phases: 2
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 2
+  completed_plans: 1
   percent: 0
 ---
 
@@ -50,6 +50,7 @@ Progress: [░░░░░░░░░░] 0%
 - Trend: —
 
 *Updated after each plan completion*
+| Phase 01-protocol-discovery P01 | 2 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -61,6 +62,8 @@ Recent decisions affecting current work:
 - Local SIP over cloud: No cloud dependency, faster, more reliable (outcome pending)
 - Button entity (not switch): Momentary action, no on/off state needed
 - Pure Python SIP: No new deps, matches integration style
+- [Phase 01-protocol-discovery]: HA1-mode digest auth: use md5secret directly (Asterisk pre-hashed HA1, not cleartext password)
+- [Phase 01-protocol-discovery]: Fresh socket per approach in sip_door_test.py — avoids port reuse and inter-approach state leakage
 
 ### Pending Todos
 
@@ -74,6 +77,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-15T10:55:00.315Z
-Stopped at: Phase 1 context gathered
-Resume file: .planning/phases/01-protocol-discovery/01-CONTEXT.md
+Last session: 2026-03-15T11:11:15.258Z
+Stopped at: Completed 01-01-PLAN.md
+Resume file: None
