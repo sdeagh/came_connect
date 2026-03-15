@@ -26,7 +26,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. The script requires no hardcoded device-specific values — device IP and SIP credentials are passed as arguments
   3. RE-03 documentation captures every header, body, and sequence needed to reproduce the result
   4. The investigation queue (callmanager port 5062, FROM rewriting, JSON body variants) is exhausted and the winning approach is identified
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 01-01-PLAN.md — Build investigation script with all 6 SIP approaches and correct HA1 credentials
+- [ ] 01-02-PLAN.md — Run approaches against device, identify winner, document protocol
 
 ### Phase 2: HA Integration
 **Goal**: Users can press a button in Home Assistant to open the door, with the BPT device fully configurable via the config flow
@@ -47,5 +50,5 @@ Phases execute in numeric order: 1 → 2
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Protocol Discovery | 0/? | Not started | - |
+| 1. Protocol Discovery | 0/2 | Planning complete | - |
 | 2. HA Integration | 0/? | Not started | - |
