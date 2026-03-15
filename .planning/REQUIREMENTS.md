@@ -61,25 +61,25 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| RE-01 | — | Pending |
-| RE-02 | — | Pending |
-| RE-03 | — | Pending |
-| RE-04 | — | Pending |
-| DOOR-01 | — | Pending |
-| DOOR-02 | — | Pending |
-| DOOR-03 | — | Pending |
-| CONF-01 | — | Pending |
-| CONF-02 | — | Pending |
-| CONF-03 | — | Pending |
-| INTG-01 | — | Pending |
-| INTG-02 | — | Pending |
-| INTG-03 | — | Pending |
+| RE-01 | Phase 1 | Pending |
+| RE-02 | Phase 1 | Pending |
+| RE-03 | Phase 1 | Pending |
+| RE-04 | Phase 1 | Pending |
+| DOOR-01 | Phase 2 | Pending |
+| DOOR-02 | Phase 2 | Pending |
+| DOOR-03 | Phase 2 | Pending |
+| CONF-01 | Phase 2 | Pending |
+| CONF-02 | Phase 2 | Pending |
+| CONF-03 | Phase 2 | Pending |
+| INTG-01 | Phase 2 | Pending |
+| INTG-02 | Phase 2 | Pending |
+| INTG-03 | Phase 2 | Pending |
 
 **Coverage:**
 - v1 requirements: 13 total
-- Mapped to phases: 0
-- Unmapped: 13
+- Mapped to phases: 13
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-15*
-*Last updated: 2026-03-15 after initial definition*
+*Last updated: 2026-03-15 after roadmap creation*
