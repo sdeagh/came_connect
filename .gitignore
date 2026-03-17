@@ -2,4 +2,21 @@ __pycache__/
 *.pyc
 *.pyo
 *.DS_Store
+*.log
+*.zip
+*.pcap
+*.pcapng
 
+# Local-only maintainer
+.local/
+.history/
+.claude/
+AGENT_PROMPT.md
+CLAUDE.md
+skills/
+.planning/
+
+# Raw research artifacts and captures
+tmp/
+systemlogs/
+docs/logs/
