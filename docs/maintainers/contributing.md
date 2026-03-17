@@ -7,12 +7,12 @@ research artifacts.
 
 Normal commits should be limited to:
 
-- [custom_components/came_connect](/home/d0m/Projects/gtapps/came_connect/custom_components/came_connect)
-- [tests](/home/d0m/Projects/gtapps/came_connect/tests)
-- [README.md](/home/d0m/Projects/gtapps/came_connect/README.md)
-- [CHANGELOG.md](/home/d0m/Projects/gtapps/came_connect/CHANGELOG.md)
-- [docs/user](/home/d0m/Projects/gtapps/came_connect/docs/user)
-- sanitized maintainer docs under [docs/maintainers](/home/d0m/Projects/gtapps/came_connect/docs/maintainers)
+- [custom_components/came_connect]custom_components/came_connect)
+- [tests](/tests)
+- [README.md](/README.md)
+- [CHANGELOG.md](/CHANGELOG.md)
+- [docs/user](/docs/user)
+- sanitized maintainer docs under [docs/maintainers](/docs/maintainers)
 
 ## Local-Only Files
 

@@ -21,7 +21,7 @@
 - Options for Redirect URI, WebSocket URL, and optional BPT door-open settings
 
 > **Note:** API and endpoints are based on reverse-engineered calls used by CAME’s web app. CAME can change them at any time.
-> BPT setup details are documented in [docs/user/bpt-door-setup.md](/home/d0m/Projects/gtapps/came_connect/docs/user/bpt-door-setup.md).
+> BPT setup details are documented in [docs/user/bpt-door-setup.md].
 
 ---
 
@@ -50,7 +50,7 @@
 ### Option A — HACS (Custom repository)
 
 1. In HACS → **Integrations** → 3-dot menu → **Custom repositories**.
-2. Repository: `https://github.com/sdeagh/came_connect`  
+2. Repository: `https://github.com/sdeagh/came_connect`
    Category: **Integration** → **Add**.
 3. Install **CAME Connect**.
 4. **Restart Home Assistant**.
@@ -322,7 +322,7 @@ In Home Assistant you should normally see:
 - one or more discovered `AUX` buttons on that same BPT/X1 device when the
   unit exposes AUX functions
 
-For more detail, see [docs/user/bpt-door-setup.md](/home/d0m/Projects/gtapps/came_connect/docs/user/bpt-door-setup.md).
+For more detail, see [docs/user/bpt-door-setup.md].
 
 ---
 
@@ -330,7 +330,7 @@ For more detail, see [docs/user/bpt-door-setup.md](/home/d0m/Projects/gtapps/cam
 
 ### Cover
 
-- **Gate** (`cover.gate`) — supports **open**, **close**, **stop**  
+- **Gate** (`cover.gate`) — supports **open**, **close**, **stop**
   _Attributes:_ `phase` (code), `phase_name` (Open/Closed/Opening/Closing/Stopped), `direction` (Opening/Closing), `last_pos`, `raw_data`.
 
 ### Button
@@ -488,25 +488,25 @@ logger:
 
 ## 🧭 Roadmap
 
-- **Multi-device support**  
+- **Multi-device support**
   Discover and add multiple CAME devices under one account; device picker in the config flow.
 
-- **Richer entities**  
+- **Richer entities**
   Expose obstruction/photocell status (if available), fault codes mapped to friendly text, cycle/runtime counters.
 
-- **WebSocket resilience**  
+- **WebSocket resilience**
   Heartbeat (ping/pong), stale-connection watchdog, and proactive token refresh before expiry.
 
-- **Smarter setup**  
+- **Smarter setup**
   Auto-detect the correct Redirect URI, verify WebSocket URL, and fetch Device IDs automatically.
 
-- **Diagnostics & logging**  
+- **Diagnostics & logging**
   One-click diagnostics download and a toggle to surface WS frames safely when debugging.
 
-- **Localization & docs**  
+- **Localization & docs**
   More translations and clearer setup/FAQ guides.
 
-- **Testing & quality**  
+- **Testing & quality**
   Add unit/integration tests and CI, and prepare for HACS default store inclusion.
 
 Have a feature request? Please open a GitHub issue.

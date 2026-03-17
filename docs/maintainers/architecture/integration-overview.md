@@ -13,17 +13,17 @@ The integration supports two main capabilities:
 
 ## Main Runtime Modules
 
-- [api.py](/home/d0m/Projects/gtapps/came_connect/custom_components/came_connect/api.py)
+- [api.py](/custom_components/came_connect/api.py)
   Central API client and protocol orchestration.
-- [config_flow.py](/home/d0m/Projects/gtapps/came_connect/custom_components/came_connect/config_flow.py)
+- [config_flow.py](/custom_components/came_connect/config_flow.py)
   Integration setup and options flow.
-- [cover.py](/home/d0m/Projects/gtapps/came_connect/custom_components/came_connect/cover.py)
+- [cover.py](/custom_components/came_connect/cover.py)
   Gate cover entity.
-- [button.py](/home/d0m/Projects/gtapps/came_connect/custom_components/came_connect/button.py)
+- [button.py](/custom_components/came_connect/button.py)
   BPT/X1 door and AUX buttons.
-- [sensor.py](/home/d0m/Projects/gtapps/came_connect/custom_components/came_connect/sensor.py)
+- [sensor.py](/custom_components/came_connect/sensor.py)
   Status sensors.
-- [binary_sensor.py](/home/d0m/Projects/gtapps/came_connect/custom_components/came_connect/binary_sensor.py)
+- [binary_sensor.py](/custom_components/came_connect/binary_sensor.py)
   Connectivity and motion state.
 
 ## Gate Control Path
@@ -41,7 +41,7 @@ The integration supports two main capabilities:
    CAME account path.
 3. Button entities are created on a separate BPT/X1 child device.
 4. Button presses send the validated cloud SIP/TLS command flow through
-   [api.py](/home/d0m/Projects/gtapps/came_connect/custom_components/came_connect/api.py).
+   [api.py](/custom_components/came_connect/api.py).
 
 ## Device Model
 
@@ -59,7 +59,7 @@ The public test suite is intentionally limited to commit-safe tests:
 - button behavior tests
 - options flow tests
 
-See [tests](/home/d0m/Projects/gtapps/came_connect/tests) for the current suite.
+See [tests](/tests) for the current suite.
 
 ## Local-Only Boundary
 
