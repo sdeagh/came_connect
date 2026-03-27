@@ -17,13 +17,74 @@
   "options": {
     "step": {
       "init": {
-        "title": "CAME Connect options",
-        "description": "Redirect and polling settings.",
+        "title": "Options",
+        "description": "Choose which settings you want to update.",
+        "menu_options": {
+          "cloud": "Cloud settings",
+          "bpt": "BPT/X1 door button",
+          "bpt_advanced": "Advanced BPT overrides",
+          "disable_bpt": "Disable BPT/X1 door button"
+        },
+        "menu_option_descriptions": {
+          "cloud": "OAuth redirect and realtime connection settings. Most users never need to change these.",
+          "bpt": "Set up the optional BPT/X1 intercom Open Door button.",
+          "bpt_advanced": "Low-level overrides for troubleshooting or known-good protocol values.",
+          "disable_bpt": "Remove the stored BPT/X1 credentials and override values from this integration."
+        }
+      },
+      "cloud": {
+        "title": "Cloud settings",
+        "description": "These values normally stay at their defaults. Change them only if your CAME client uses a different redirect URI or realtime endpoint.",
         "data": {
           "redirect_uri": "Redirect URI",
-          "websocket_url": "WebSocket URL"
+          "websocket_url": "Realtime WebSocket URL"
+        },
+        "data_description": {
+          "redirect_uri": "OAuth redirect URI used for login. Most users should keep the default value.",
+          "websocket_url": "Realtime endpoint used to receive live gate status updates."
         }
+      },
+      "bpt": {
+        "title": "BPT/X1 door button",
+        "description": "Only for BPT/X1 intercom units such as XTS7 indoor monitors. Most users only need the Mobile App SIP password.\n\nDiscovery status: {discovery_status}\nSelected Mobile App slot: {selected_sip_user}\nIntercom: {device_name}\nEntry panel: {entry_panel_name}\nDoor action label: {open_door_label}\nToken source: {token_source}",
+        "data": {
+          "bpt_sip_password": "Mobile App SIP password",
+          "bpt_sip_user": "Mobile App slot / SIP user"
+        },
+        "data_description": {
+          "bpt_sip_password": "Password for the Mobile App SIP account used to open the door.",
+          "bpt_sip_user": "Shown as a dropdown when live discovery can resolve the available Mobile App slots."
+        }
+      },
+      "bpt_advanced": {
+        "title": "Advanced BPT overrides",
+        "description": "Only use these if autodiscovery fails or if you are forcing known-good values from traces.",
+        "data": {
+          "bpt_sip_ha1": "Mobile App SIP HA1 override",
+          "bpt_device_token": "Legacy device token override",
+          "bpt_keycode": "BPT keycode override",
+          "bpt_src_addr": "Source L3 override",
+          "bpt_subject_label": "Subject label override",
+          "bpt_target_user": "Target SIP user override",
+          "bpt_panel_addr": "Panel L3 override"
+        },
+        "data_description": {
+          "bpt_sip_ha1": "Advanced alternative to the Mobile App SIP password.",
+          "bpt_device_token": "Legacy manual token override. Normally auto-discovered from /api/sipaccounts.",
+          "bpt_keycode": "Force a specific BPT keycode only if metadata discovery is wrong.",
+          "bpt_src_addr": "Force a specific mobile-app L3 address.",
+          "bpt_subject_label": "Force the SIP subject label used in the open-door message.",
+          "bpt_target_user": "Force the target SIP user, usually the entry panel.",
+          "bpt_panel_addr": "Force the panel L3 address used in the XML open-door payload."
+        }
+      },
+      "disable_bpt": {
+        "title": "Disable BPT/X1 door button",
+        "description": "This removes the stored BPT/X1 password, SIP user, HA1, and all BPT override values from this integration. Gate control will remain available."
       }
+    },
+    "error": {
+      "slot_required": "Choose a Mobile App slot before saving."
     }
   }
 }
