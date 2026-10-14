@@ -40,6 +40,9 @@
 - Gate and automation control is the main public feature of this integration.
 - BPT/X1 intercom support has been validated on setups using **XTS7-style**
   indoor monitors.
+- **PLX WiFi:** AUX2 gate opening has been user-validated with manual SIP
+  settings, no mobile device token, and web `plants` metadata.
+  See [PLX WiFi setup](docs/user/plx-wifi-setup.md) for the tested scope.
 - Other BPT/X1 or video-entry variants may still work, but they should be
   treated as compatible-on-test rather than guaranteed.
 

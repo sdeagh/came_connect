@@ -46,7 +46,7 @@
       },
       "bpt": {
         "title": "BPT/X1 door button",
-        "description": "Only for BPT/X1 intercom units such as XTS7 indoor monitors. Most users only need the Mobile App SIP password.\n\nDiscovery status: {discovery_status}\nSelected Mobile App slot: {selected_sip_user}\nIntercom: {device_name}\nEntry panel: {entry_panel_name}\nDoor action label: {open_door_label}\nToken source: {token_source}",
+        "description": "For BPT/X1 intercoms, including XTS7 and PLX WiFi. PLX WiFi direct SIP requires complete manual settings in Advanced BPT overrides; see the setup documentation.\n\nDiscovery status: {discovery_status}\nSelected Mobile App slot: {selected_sip_user}\nIntercom: {device_name}\nEntry panel: {entry_panel_name}\nDoor action label: {open_door_label}\nToken source: {token_source}",
         "data": {
           "bpt_sip_password": "Mobile App SIP password",
           "bpt_sip_user": "Mobile App slot / SIP user"
@@ -70,7 +70,7 @@
         },
         "data_description": {
           "bpt_sip_ha1": "Advanced alternative to the Mobile App SIP password.",
-          "bpt_device_token": "Legacy manual token override. Normally auto-discovered from /api/sipaccounts.",
+          "bpt_device_token": "Legacy manual token override. Leave blank for PLX WiFi direct SIP with complete manual settings.",
           "bpt_keycode": "Force a specific BPT keycode only if metadata discovery is wrong.",
           "bpt_src_addr": "Force a specific mobile-app L3 address.",
           "bpt_subject_label": "Force the SIP subject label used in the open-door message.",

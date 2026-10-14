@@ -152,7 +152,7 @@ class BptDoorConfig:
             discovery.panel_addr if discovery and discovery.panel_addr else DEFAULT_BPT_PANEL_ADDR
         )
 
-        if not all([keycode, sip_user, src_addr, subject_label, device_token]):
+        if not all([keycode, sip_user, src_addr, subject_label]):
             return None
         if not (sip_password or sip_ha1):
             return None
@@ -653,11 +653,12 @@ class CameConnectClient:
         self._redirect_uri = redirect_uri
         self._access_token: Optional[str] = None
         self._code_verifier: Optional[str] = None
+        self._oauth_path = "oauth"
         self._expires_at: float = 0.0  # monotonic deadline for the token
         self._lock = asyncio.Lock()
 
     # ---------- OAuth helpers ----------
-    async def _fetch_auth_code(self) -> str:
+    async def _fetch_auth_code(self, *, _mfa: bool = False) -> str:
         
         code_verifier = _generate_code_verifier(64)
         code_challenge = _generate_code_challenge(code_verifier)
@@ -677,12 +678,19 @@ class CameConnectClient:
             "password": self._password,
         }
         headers = _basic_header(self._client_id, self._client_secret)
-        async with self._session.post(f"{API_BASE}/oauth/auth-code", params=params, data=data, headers=headers, timeout=20) as resp:
+        oauth_path = "oauth/mfa" if _mfa else "oauth"
+        async with self._session.post(f"{API_BASE}/{oauth_path}/auth-code", params=params, data=data, headers=headers, timeout=20) as resp:
             
             js = await resp.json(content_type=None)
             # Treat common auth failures as auth errors (CAME sometimes uses 400)
             if resp.status == 401:
                 raise CameAuthError("Invalid CAME Connect credentials")
+            if (
+                not _mfa and resp.status == 400 and isinstance(js, dict)
+                and js.get("error") == "invalid_grant"
+                and js.get("error_description") == "invalid_request"
+            ):
+                return await self._fetch_auth_code(_mfa=True)
             if resp.status == 400 and isinstance(js, dict) and js.get("error") in {
                 "invalid_grant", "invalid_client", "unauthorized_client"
             }:
@@ -692,6 +700,7 @@ class CameConnectClient:
                 raise CameApiError(f"auth-code failed: {resp.status} {js}")
 
             self._code_verifier = code_verifier
+            self._oauth_path = oauth_path
             return js["code"]
 
     async def _fetch_token(self, code: str) -> str:
@@ -703,7 +712,7 @@ class CameConnectClient:
         }
         headers = _basic_header(self._client_id, self._client_secret)
 
-        async with self._session.post(f"{API_BASE}/oauth/token", data=data, headers=headers, timeout=20) as resp:
+        async with self._session.post(f"{API_BASE}/{self._oauth_path}/token", data=data, headers=headers, timeout=20) as resp:
                         
             js = await resp.json(content_type=None)
             # Treat common auth failures as auth errors (CAME sometimes uses 400)
@@ -795,6 +804,9 @@ class CameConnectClient:
         return result
 
     async def _async_bpt_xipregister(self, config: BptDoorConfig) -> dict[str, Any]:
+        if not config.device_token:
+            # A complete manual SIP configuration can work without mobile push registration.
+            return {"xipregister_status": "skipped_no_device_token"}
         xip_status, xip_body = await self._request(
             "GET",
             f"{API_BASE}/push/xipregister",
@@ -857,6 +869,10 @@ class CameConnectClient:
         device_id: int | str,
         options: Mapping[str, Any],
     ) -> BptDeviceMetadata:
+        manual_config = BptDoorConfig.from_mapping(options)
+        if manual_config is not None and not manual_config.device_token:
+            device = await self._async_get_web_bpt_device(device_id)
+            return _extract_bpt_device_metadata(device)
         preferred_sip_user = str(options.get(CONF_BPT_SIP_USER, "")).strip()
         preferred_subject_label = str(options.get(CONF_BPT_SUBJECT_LABEL, "")).strip()
         preferred_src_addr = str(options.get(CONF_BPT_SRC_ADDR, "")).strip()
@@ -878,6 +894,22 @@ class CameConnectClient:
         preferred_subject_label = str(options.get(CONF_BPT_SUBJECT_LABEL, "")).strip()
         preferred_src_addr = str(options.get(CONF_BPT_SRC_ADDR, "")).strip()
         manual_device_token = str(options.get(CONF_BPT_DEVICE_TOKEN, "")).strip()
+
+        if BptDoorConfig.from_mapping(options) is not None and not manual_device_token:
+            device = await self._async_get_web_bpt_device(device_id)
+            slot = _select_bpt_mobile_slot(
+                _extract_bpt_mobile_slots(device),
+                preferred_sip_user=preferred_sip_user,
+                preferred_subject_label=preferred_subject_label,
+                preferred_src_addr=preferred_src_addr,
+            )
+            assert slot is not None
+            return BptSetupPreview(
+                slots=(slot,),
+                selected_slot=slot,
+                metadata=_extract_bpt_device_metadata(device),
+                token_source="direct_sip",
+            )
 
         token_candidates: list[tuple[str, BptSipAccount | None]] = []
         if manual_device_token:
@@ -1041,6 +1073,25 @@ class CameConnectClient:
         if last_error:
             raise last_error
         raise CameApiError(f"BPT device {device_id} was not found during autodiscovery")
+
+    async def _async_get_web_bpt_device(self, device_id: int | str) -> dict[str, Any]:
+        """Read web plants metadata without a mobile device token."""
+        status, payload = await self._request("GET", f"{API_BASE}/evo/v1/sites/admin")
+        if status != 200:
+            raise CameApiError(f"Web site discovery failed: HTTP {status}")
+        for site in _coerce_list(payload):
+            site_id = site.get("Id") or site.get("SiteId")
+            if site_id is None:
+                continue
+            status, plants = await self._request(
+                "GET", f"{API_BASE}/evo/v1/sites/{site_id}/plants"
+            )
+            if status != 200:
+                continue
+            device = _find_device_record(plants, device_id)
+            if device is not None:
+                return device
+        raise CameApiError("BPT device not found in web plants metadata")
 
     async def async_get_sip_accounts(self) -> list[BptSipAccount]:
         status, js = await self._request("GET", f"{API_BASE}/sipaccounts")

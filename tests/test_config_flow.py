@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from dataclasses import replace
 from unittest.mock import AsyncMock
 
 from _support import (
@@ -101,6 +102,16 @@ def _schema_value(schema, key: str):
 
 
 class ConfigFlowTests(unittest.IsolatedAsyncioTestCase):
+    async def test_direct_sip_preview_reports_no_device_token(self) -> None:
+        slot = BptMobileSlot(
+            sip_user=DUMMY_SIP_USER_TWO,
+            src_addr=DUMMY_SRC_ADDR_TWO,
+            subject_label=DUMMY_SLOT_TWO_LABEL,
+        )
+        preview = replace(_preview((slot,), selected_slot=slot), token_source="direct_sip")
+        placeholders = _flow()._build_bpt_placeholders(preview, None)
+        self.assertEqual(placeholders["token_source"], "Direct SIP (no device token; web plants metadata)")
+
     async def test_async_step_bpt_auto_picks_single_slot(self) -> None:
         slot = BptMobileSlot(
             sip_user=DUMMY_SIP_USER_TWO,

@@ -202,11 +202,10 @@ class CameConnectOptionsFlow(config_entries.OptionsFlow):
                 or "BPT metadata was loaded, but no selectable Mobile App slots were resolved."
             )
 
-        token_source = (
-            "Manual device token override"
-            if preview.token_source == "manual_override"
-            else "Detected from /api/sipaccounts"
-        )
+        token_source = {
+            "manual_override": "Manual device token override",
+            "direct_sip": "Direct SIP (no device token; web plants metadata)",
+        }.get(preview.token_source, "Detected from /api/sipaccounts")
 
         return {
             "discovery_status": discovery_status,
