@@ -81,9 +81,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     hub = CameEventHub(device_id)
     hub.seed_from_devicestatus(coordinator.data or {})
 
-    async def _on_ws_event(code: int, value: int | None):
+    async def _on_ws_event(event_device_id: str | None, code: int, value: int | None):
         """Apply WS event; push snapshot only if it represents a state change.
+
+        The WS stream is per account, so with several automations on the same
+        CAME Connect account every entry receives every device's events.
+        Events for other devices are dropped; events without a device id are
+        not trusted and trigger a REST refresh of this entry's device instead.
         """
+        if event_device_id is None:
+            _LOGGER.debug("WS code=%s without DeviceId: refreshing %s via REST", code, device_id)
+            await coordinator.async_request_refresh()
+            return
+        if event_device_id != str(device_id):
+            _LOGGER.debug("WS event for device %s ignored by entry for %s", event_device_id, device_id)
+            return
+
         new_snapshot = hub.apply_event(code, value)
         if new_snapshot is None:
             _LOGGER.debug("WS code=%s value=%r ignored (no state change)", code, value)

@@ -1353,7 +1353,7 @@ class CameWebsocketClient:
         session: aiohttp.ClientSession,
         ws_url: str,
         token_getter: Callable[[], Awaitable[str]],
-        on_event: Callable[[int, Optional[int]], Awaitable[None]],
+        on_event: Callable[[Optional[str], int, Optional[int]], Awaitable[None]],
     ):
         self._session = session
         self._ws_url = ws_url
@@ -1408,9 +1408,9 @@ class CameWebsocketClient:
                         if msg.type == aiohttp.WSMsgType.TEXT:
                             WS_LOGGER.debug("WS TEXT: %s", msg.data)
                             try:
-                                code, value = self._parse_frame(msg.data)
+                                device_id, code, value = self._parse_frame(msg.data)
                                 if code is not None:
-                                    await self._on_event(code, value)
+                                    await self._on_event(device_id, code, value)
                             except Exception:
                                 WS_LOGGER.warning("WS frame parse failed", exc_info=True)
                         elif msg.type in (
@@ -1438,10 +1438,34 @@ class CameWebsocketClient:
 
     # --- frame parsing ---
 
-    def _parse_frame(self, text: str) -> tuple[int | None, int | None]:
+    @staticmethod
+    def _extract_device_id(*sources: Any) -> Optional[str]:
+        """Return the device id carried by a WS frame, if any.
+
+        The CAME Connect real-time channel is per *account*, not per device:
+        every connection receives the events of all the automations the user
+        can see. The device id is therefore needed to route each event to the
+        right config entry.
         """
-        For EventId=21 (VarcoStatusUpdate), return (phase, percent).
-        Everything else → (None, None).
+        for src in sources:
+            if not isinstance(src, dict):
+                continue
+            for key in ("DeviceId", "deviceId", "DeviceID", "device_id"):
+                val = src.get(key)
+                if val not in (None, ""):
+                    return str(val)
+            device = src.get("Device")
+            if isinstance(device, dict):
+                val = device.get("Id") or device.get("DeviceId")
+                if val not in (None, ""):
+                    return str(val)
+        return None
+
+    def _parse_frame(self, text: str) -> tuple[Optional[str], int | None, int | None]:
+        """
+        For EventId=21 (VarcoStatusUpdate), return (device_id, phase, percent).
+        device_id is None when the frame does not carry one.
+        Everything else -> (None, None, None).
         """
         try:
             outer = json.loads(text)
@@ -1453,12 +1477,13 @@ class CameWebsocketClient:
             payload = inner.get("Payload")
 
             if event_id == 21 and isinstance(payload, list) and len(payload) >= 2:
+                device_id = self._extract_device_id(data, inner, outer)
                 phase = int(payload[0])
                 percent = int(payload[1])
-                return phase, percent
+                return device_id, phase, percent
 
             # ignore 5/6/23 etc. here; REST fallback will handle if needed
-            return None, None
+            return None, None, None
         except Exception:
             WS_LOGGER.exception("WS frame parse failed")
-            return None, None
+            return None, None, None
